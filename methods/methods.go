@@ -2,7 +2,12 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"math"
+	"strings"
+	"time"
+
+	"golang.org/x/tour/reader"
 )
 
 type vertex struct {
@@ -183,7 +188,7 @@ func myEmptyInterface() {
 	describe2(i) // (hello, string)
 }
 
-// =========
+// ==========
 
 // With type assertions you can test whether the value underlying an interface value is of a specific type
 func typeAssertions() {
@@ -213,6 +218,116 @@ func do(i interface{}) {
 		fmt.Printf("I don't know about type %T!\n", v)
 	}
 }
+
+// =============
+
+type person struct {
+	Name string
+	Age  int
+}
+
+// Implement Stringer interface
+func (p person) String() string {
+	return fmt.Sprintf("%v (%v years)", p.Name, p.Age)
+}
+
+// ============
+
+type ipAddr [4]byte
+
+// Stringer exercise, returns an IP address in the form "1.2.3.4"
+func (ip ipAddr) String() string {
+	return fmt.Sprintf("%v.%v.%v.%v", ip[0], ip[1], ip[2], ip[3])
+}
+
+func stringerExercise() {
+	hosts := map[string]ipAddr{
+		"loopback":  {127, 0, 0, 1},
+		"googleDNS": {8, 8, 8, 8},
+	}
+	for name, ip := range hosts {
+		fmt.Printf("%v: %v\n", name, ip)
+	}
+}
+
+// ==========
+
+type myError struct {
+	When time.Time
+	What string
+}
+
+// Implement the Error interface
+func (e *myError) Error() string {
+	return fmt.Sprintf("at %v, %s",
+		e.When, e.What)
+}
+
+// When "error" gets returned, it can be any custom type as long as "Error()" is implemented for that type
+func run() error {
+	return &myError{
+		time.Now(),
+		"it didn't work",
+	}
+}
+
+// ==========
+
+type errNegativeSqrt float64
+
+func (e errNegativeSqrt) Error() string {
+	return fmt.Sprintf("cannot Sqrt negative number: %v", float64(e)) // Must convert e to float64 to avoid infinite loop
+}
+
+// Error exercise
+func mySqrt(x float64) (float64, error) {
+	var r float64
+
+	// Check precondition
+	if x < 0 {
+		return r, errNegativeSqrt(x)
+	}
+
+	r = 1.0
+	old := 0.0
+	for r != old {
+		old = r
+		r -= (r*r - x) / (2 * r)
+	}
+
+	return r, nil
+}
+
+// ===========
+
+func myReader() {
+	r := strings.NewReader("Hello, Reader!")
+
+	b := make([]byte, 8)
+	// Reads 8 bytes, then 6 bytes, then EOF is reached
+	for {
+		n, err := r.Read(b)
+		fmt.Printf("n = %v err = %v b = %v\n", n, err, b)
+		fmt.Printf("b[:n] = %q\n", b[:n])
+		if err == io.EOF {
+			break
+		}
+	}
+}
+
+// ==========
+
+type aReader struct{}
+
+// Reader exercise
+func (r aReader) Read(b []byte) (int, error) {
+	for i := 0; i < len(b); i++ {
+		b[i] = 'A'
+	}
+	return len(b), nil
+}
+
+// ===========
 
 func main() {
 	v := vertex{3, 4}
@@ -264,4 +379,22 @@ func main() {
 	do(21)
 	do("hello")
 	do(true)
+
+	a := person{"Arthur Dent", 42}
+	z := person{"Zaphod Beeblebrox", 9001}
+	fmt.Println(a, z)
+
+	stringerExercise()
+
+	if err := run(); err != nil {
+		// Prints according to custom error format
+		fmt.Println(err) // at 2018-04-09 19:57:11.1472173 +0200 CEST m=+0.012693401, it didn't work
+	}
+
+	fmt.Println(mySqrt(20))
+	fmt.Println(mySqrt(-20))
+
+	myReader()
+
+	reader.Validate(aReader{})
 }
