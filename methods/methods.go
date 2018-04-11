@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"os"
 	"strings"
 	"time"
 
@@ -329,6 +330,44 @@ func (r aReader) Read(b []byte) (int, error) {
 
 // ===========
 
+type rot13Reader struct {
+	r io.Reader
+}
+
+// Reader exercise 2
+func (rot13r *rot13Reader) Read(b []byte) (int, error) {
+	fmt.Printf("Before reading: %v\n", b)
+	var read int
+	read, err := rot13r.r.Read(b)
+	if err != nil && err != io.EOF {
+		fmt.Printf("Error: %v\n", err)
+		return 0, err
+	}
+	fmt.Printf("After reading: %v\n", string(b[:read]))
+	for i := 0; i < read; i++ {
+		fmt.Printf("Before rotation: %v\n", string(b[i]))
+		b[i] = rot13(b[i])
+		fmt.Printf("After rotation: %v\n", string(b[i]))
+	}
+	fmt.Printf("Whole byte array after rotation: %v\n", string(b[:read]))
+	return read, io.EOF
+}
+
+func rot13(b byte) byte {
+	alphabet := "abcdefghijklmnopqrstuvwxyz"
+	rot13 := "nopqrstuvwxyzabcdefghijklm"
+	lowercaseLetter := strings.ToLower(string(b))
+	alphabetIndex := strings.Index(alphabet, lowercaseLetter)
+	// Only rotate found letters, keep all others (like space and exclamation mark)
+	if alphabetIndex != -1 {
+		rot13Letter := rot13[alphabetIndex]
+		return rot13Letter
+	}
+	return b
+}
+
+// ==============
+
 func main() {
 	v := vertex{3, 4}
 	fmt.Println(v.abs())
@@ -397,4 +436,8 @@ func main() {
 	myReader()
 
 	reader.Validate(aReader{})
+
+	s := strings.NewReader("Lbh penpxrq gur pbqr!")
+	r := rot13Reader{s}
+	io.Copy(os.Stdout, &r)
 }
