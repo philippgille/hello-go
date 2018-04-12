@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"image"
+	"image/color"
 	"io"
 	"math"
 	"os"
 	"strings"
 	"time"
 
+	"golang.org/x/tour/pic"
 	"golang.org/x/tour/reader"
 )
 
@@ -336,7 +339,7 @@ type rot13Reader struct {
 
 // Reader exercise 2
 func (rot13r *rot13Reader) Read(b []byte) (int, error) {
-	fmt.Printf("Before reading: %v\n", b)
+	fmt.Printf("Before reading, first 100 bytes: %v\n", b[:100])
 	var read int
 	read, err := rot13r.r.Read(b)
 	if err != nil && err != io.EOF {
@@ -345,9 +348,9 @@ func (rot13r *rot13Reader) Read(b []byte) (int, error) {
 	}
 	fmt.Printf("After reading: %v\n", string(b[:read]))
 	for i := 0; i < read; i++ {
-		fmt.Printf("Before rotation: %v\n", string(b[i]))
+		//fmt.Printf("Before rotation: %v\n", string(b[i]))
 		b[i] = rot13(b[i])
-		fmt.Printf("After rotation: %v\n", string(b[i]))
+		//fmt.Printf("After rotation: %v\n", string(b[i]))
 	}
 	fmt.Printf("Whole byte array after rotation: %v\n", string(b[:read]))
 	return read, io.EOF
@@ -364,6 +367,23 @@ func rot13(b byte) byte {
 		return rot13Letter
 	}
 	return b
+}
+
+// ==============
+
+type myImage struct{}
+
+func (img myImage) At(x, y int) color.Color {
+	v := uint8((x + y) / 2)
+	return color.RGBA{v, v, 255, 255}
+}
+
+func (img myImage) ColorModel() color.Model {
+	return color.RGBAModel
+}
+
+func (img myImage) Bounds() image.Rectangle {
+	return image.Rect(0, 0, 255, 255)
 }
 
 // ==============
@@ -440,4 +460,13 @@ func main() {
 	s := strings.NewReader("Lbh penpxrq gur pbqr!")
 	r := rot13Reader{s}
 	io.Copy(os.Stdout, &r)
+	fmt.Println()
+
+	// Image
+	m := image.NewRGBA(image.Rect(0, 0, 100, 100))
+	fmt.Println(m.Bounds())
+	fmt.Println(m.At(0, 0).RGBA())
+
+	m2 := myImage{}
+	pic.ShowImage(m2)
 }
