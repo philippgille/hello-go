@@ -39,6 +39,29 @@ func myChannel() {
 	fmt.Println(x, y, x+y)
 }
 
+// ========
+
+// Closing a channel
+func fibonacci(n int, c chan int) {
+	x, y := 0, 1
+	for i := 0; i < n; i++ {
+		c <- x
+		x, y = y, x+y
+	}
+	close(c)
+}
+
+// Iterate over messages in a channel
+func myChannelRange() {
+	c := make(chan int, 10)
+	go fibonacci(cap(c), c)
+	for i := range c {
+		fmt.Println(i)
+	}
+}
+
+// ========
+
 func main() {
 	myGoroutine()
 
@@ -53,4 +76,6 @@ func main() {
 	// ch <- 3
 	fmt.Println(<-ch)
 	fmt.Println(<-ch)
+
+	myChannelRange()
 }
